@@ -1,24 +1,30 @@
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 
 public class IHM{
     private Buffer buffer;
     private Clipboard clipboard;
+    private History history;
+    private Script script;
 
     private JFrame frame;
     private JPanel panel;
     private JTextArea textArea1;
     
     public IHM(){
-        // Création du buffer et du clipboard
+        // Buffer, clipboard, history and script creation
         this.buffer = new Buffer();
         this.clipboard = new Clipboard();
+        this.history = new History();
+        this.script = new Script();
 
-        // Création de l'interface graphique
+        // Graphic interface creation
         frame = new JFrame("Editeur de texte");
         frame.setSize(1000, 500);
         panel = new JPanel();
@@ -29,6 +35,8 @@ public class IHM{
         frame.getContentPane().add(panel);
         frame.setVisible(true);
         textArea1.setEditable(false);
+        textArea1.setBackground(Color.gray);
+        textArea1.setForeground(Color.white);
         frame.addWindowListener(new WindowAdapter(){
             @Override
             public void windowClosing(WindowEvent e){
@@ -37,174 +45,135 @@ public class IHM{
         });
     }
 
-    private void addToBuffer(int keyCode){
+    private void exec(Commande c){
+        // Execute a command and add it to the history and if needed to the script
+        c.execute(buffer, clipboard);
+        history.addCommand(c);
+        if (script.isRecording()){script.addCommand(c);}
+    }
+
+    private void noDown(KeyEvent e){
+        // If neither ctrl nor shift is pressed
+        int keyCode = e.getKeyCode();
+        Commande c;
         switch(keyCode){
-            case KeyEvent.VK_A: 
-                System.out.println("A");
-                buffer.addText("A");
+            case KeyEvent.VK_BACK_SPACE: // Delete a character
+                c = new RemText(buffer, clipboard);
+                exec(c);
                 break;
-            case KeyEvent.VK_B: 
-                System.out.println("B");
-                buffer.addText("B");
+            case KeyEvent.VK_RIGHT: // Move the cursor to the right and reset the selection
+                c = new Cursor(buffer, clipboard, true, true);
+                exec(c);
                 break;
-            case KeyEvent.VK_C: 
-                System.out.println("C");
-                buffer.addText("C");
+            case KeyEvent.VK_LEFT: // Move the cursor to the left and reset the selection
+                c = new Cursor(buffer, clipboard, false, true);
+                exec(c);
                 break;
-            case KeyEvent.VK_D: 
-                System.out.println("D");
-                buffer.addText("D");
-                break;
-            case KeyEvent.VK_E: 
-                System.out.println("E");
-                buffer.addText("E");
-                break;
-            case KeyEvent.VK_F: 
-                System.out.println("F");
-                buffer.addText("F");
-                break;
-            case KeyEvent.VK_G: 
-                System.out.println("G");
-                buffer.addText("G");
-                break;
-            case KeyEvent.VK_H: 
-                System.out.println("H");
-                buffer.addText("H");
-                break;
-            case KeyEvent.VK_I: 
-                System.out.println("I");
-                buffer.addText("I");
-                break;
-            case KeyEvent.VK_J: 
-                System.out.println("J");
-                buffer.addText("J");
-                break;
-            case KeyEvent.VK_K: 
-                System.out.println("K");
-                buffer.addText("K");
-                break;
-            case KeyEvent.VK_L: 
-                System.out.println("L");
-                buffer.addText("L");
-                break;
-            case KeyEvent.VK_M: 
-                System.out.println("M");
-                buffer.addText("M");
-                break;
-            case KeyEvent.VK_N: 
-                System.out.println("N");
-                buffer.addText("N");
-                break;
-            case KeyEvent.VK_O: 
-                System.out.println("O");
-                buffer.addText("O");
-                break;
-            case KeyEvent.VK_P: 
-                System.out.println("P");
-                buffer.addText("P");
-                break;
-            case KeyEvent.VK_Q: 
-                System.out.println("Q");
-                buffer.addText("Q");
-                break;
-            case KeyEvent.VK_R: 
-                System.out.println("R");
-                buffer.addText("R");
-                break;
-            case KeyEvent.VK_S: 
-                System.out.println("S");
-                buffer.addText("S");
-                break;
-            case KeyEvent.VK_T: 
-                System.out.println("T");
-                buffer.addText("T");
-                break;
-            case KeyEvent.VK_U: 
-                System.out.println("U");
-                buffer.addText("U");
-                break;
-            case KeyEvent.VK_V: 
-                System.out.println("V");
-                buffer.addText("V");
-                break;
-            case KeyEvent.VK_W: 
-                System.out.println("W");
-                buffer.addText("W");
-                break;
-            case KeyEvent.VK_X: 
-                System.out.println("X");
-                buffer.addText("X");
-                break;
-            case KeyEvent.VK_Y: 
-                System.out.println("Y");
-                buffer.addText("Y");
-                break;
-            case KeyEvent.VK_Z: 
-                System.out.println("Z");
-                buffer.addText("Z");
-                break;
-            case KeyEvent.VK_ENTER: 
-                System.out.println("ENTER");
-                buffer.addText("\n");
-                break;
-            case KeyEvent.VK_SPACE: 
-                System.out.println("SPACE");
-                buffer.addText(" ");
-                break;
-            case KeyEvent.VK_BACK_SPACE: 
-                System.out.println("BACKSPACE");
-                buffer.delChar();
-                break;
-            case KeyEvent.VK_COMMA: 
-                System.out.println("COMMA");
-                buffer.addText(",");
-                break;
-            case KeyEvent.VK_PERIOD: 
-                System.out.println("PERIOD");
-                buffer.addText(".");
+            default: // Print the character
+                String t = Character.toString(e.getKeyChar());
+                c = new AddText(buffer, clipboard, t);
+                exec(c);
                 break;
         }
     }
 
-    private void actOnBuffer(int keyCode){
+    private void shftDown(KeyEvent e){
+        // Shift is pressed
+        if (!(e.getKeyCode()==KeyEvent.VK_SHIFT)){ // prevent to add any character if only shift is pressed
+            int keyCode = e.getKeyCode();
+            Commande c;
+            switch(keyCode){
+                case KeyEvent.VK_RIGHT: // Move the cursor to the right and modify the selection
+                    c = new Cursor(buffer, clipboard, true, false);
+                    exec(c);
+                    break;
+                case KeyEvent.VK_LEFT: // Move the cursor to the left and modify the selection
+                    c = new Cursor(buffer, clipboard, false, false);
+                    exec(c);
+                    break;
+                default: // Print the character
+                    String t = Character.toString(e.getKeyChar());
+                    c = new AddText(buffer, clipboard, t);
+                    exec(c);
+                    break;
+            }
+        }
+        
+    }
+
+    private void ctrlDown(KeyEvent e){
+        // Control is pressed
+        int keyCode = e.getKeyCode();
         Commande c;
         switch(keyCode){
-            case KeyEvent.VK_C:
-                c = new Copier();
+            case KeyEvent.VK_C: // Copy the selection
+                c = new Copier(buffer, clipboard);
                 c.execute(buffer, clipboard);
+                if (script.isRecording()){script.addCommand(c);}
                 break;
-            case KeyEvent.VK_V:
-                c = new Coller();
-                c.execute(buffer, clipboard);
+            case KeyEvent.VK_V: // Paste the selection
+                c = new Coller(buffer, clipboard);
+                exec(c);
                 break;
-            case KeyEvent.VK_X:
-                c = new Couper();
-                c.execute(buffer, clipboard);
+            case KeyEvent.VK_X: // Cut the selection
+                c = new Couper(buffer, clipboard);
+                exec(c);
+                break;
+            case KeyEvent.VK_Z: // Undo
+                history.undo(buffer, clipboard);
+                break;
+            case KeyEvent.VK_Y: // Redo
+                history.redo(buffer, clipboard);
+                break;
+            case KeyEvent.VK_R: // Start or stop to record a script
+                if (script.isRecording()){
+                    script.setRecording(false);
+                    textArea1.setCaretColor(Color.BLACK);
+                } else {
+                    script.clear();
+                    script.setRecording(true);
+                    textArea1.setCaretColor(Color.RED);
+                }
+                break;
+            case KeyEvent.VK_E: // Replay a script
+                script.execute(buffer, clipboard, history);
                 break;
         }
     }
 
     public void start(){
-        textArea1.addKeyListener(new KeyAdapter(){
-            public void keyPressed(KeyEvent e){
-                // On récupère la position du curseur
-                buffer.setCursor(textArea1.getCaretPosition());
-                buffer.setEndSel(textArea1.getSelectionEnd());
-                buffer.setStartSel(textArea1.getSelectionStart());
+        // We want to prevent the user to move the cursor with the mouse
+        textArea1.setCaret(new DefaultCaret() {
+            @Override
+            public void mouseClicked(MouseEvent e) {}
+            @Override
+            public void mousePressed(MouseEvent e) {}
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+            @Override
+            public void mouseDragged(MouseEvent e) {}
+        });
 
-                int keyCode = e.getKeyCode();
-                // ajout du caractère dans le buffer
-                if (e.isControlDown()){
-                    actOnBuffer(keyCode);
-                } else {
-                    addToBuffer(keyCode);
-                }
+        // Get the key pressed
+        textArea1.addKeyListener(new KeyAdapter(){ 
+            @Override
+            public void keyPressed(KeyEvent e){
                 
-                // Mise à jour de l'affichage
+                // The keyboard entry is processed
+                if (e.isControlDown()){
+                    ctrlDown(e);
+                } else if (e.isShiftDown()){
+                    shftDown(e);
+                } else {
+                    noDown(e);
+                }
+                e.consume();
+                
+                // We update the display
                 textArea1.setText(buffer.getText());
                 textArea1.setCaretPosition(buffer.getCursor());
-                textArea1.setSelectionEnd(buffer.getEndSel());
                 textArea1.setSelectionStart(buffer.getStartSel());
+                textArea1.setSelectionEnd(buffer.getEndSel());
             }
         });
     }

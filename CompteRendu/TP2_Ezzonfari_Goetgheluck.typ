@@ -127,7 +127,7 @@ Nous attestons que ce travail est original, qu’il indique de façon approprié
   []
 ))
 \
-#h(1cm)Nous sommes ensuite passer à la partie développement de notre éditeur. Nous avons donc fais des classes pour chaque instance du diagramme de classe. Nous avons, à l'aide des librairie java.awt et javax.swing, réalisé une interface graphique, qui nous a permis d'afficher le texte, et de récupérer les interactions avec la souris pour bouger le curseur. Cependant, nous avons bloqué ou ignoré toutes autres fonctionnalités, car nous devions implémenter nous même le reste de l'éditeur de texte.
+#h(1cm)Nous sommes ensuite passé à la partie développement de notre éditeur. Nous avons donc fait des classes pour chaque instance du diagramme de classe. Nous avons, à l'aide des librairie java.awt et javax.swing, réalisé une interface graphique, qui nous a permis d'afficher le texte, et de récupérer les interactions avec la souris pour bouger le curseur. Cependant, nous avons bloqué ou ignoré toutes autres fonctionnalités, car nous devions implémenter nous même le reste de l'éditeur de texte.
 \
 #h(1cm)Voici un apercu de la fenêtre de notre éditeur de texte.
 #align(image("pictures/ApercuEditeur.png", width : 80%), center)
@@ -143,14 +143,86 @@ Nous attestons que ce travail est original, qu’il indique de façon approprié
 #h(1cm)Nous voulons maintenant implémenter de nouvelles fonctionnalités. Celles-ci sont listées ci-dessous.
 - Enregistrer/rejouer les actions de l’utilisateur (e.g., script),
 - Réaliser le défaire/refaire, avec une capacité quelconque dans le défaire (autrement dit on peut revenir au début).
+\ \
+Nous modifions donc le diagramme de cas d'utilisation afin qu'il réponde à ces nouvelles fonctionnalités.
+#align(image("pictures/CasUtilisation2.png", width : 30%), center)
+#h(1cm)Puis nous décrivons les nouveaux cas d'utilisations :
 
 
+#align(center,table(columns: 1, align: left+horizon,
+  
+  [*Nom du cas d'utilisation* : Défaire.
+\ *Brève description* : L'utilisateur défait la dernière action effectuée dans l'éditeur de texte.
+\ *Acteurs* : Utilisateur.
+\ *Contexte* : L'utilisateur souhaite annuler une action qui a été effectuée par erreur ou qui doit être corrigée.
+\ *Données en entrée et pré-conditions* : Une ou plusieurs actions ont été effectuées.
+\ *Scénario principal* : L'utilisateur utilise Ctrl-Z pour annuler la dernière action effectuée, que ce soit une modification de texte, une suppression, un collage, etc.],
 
+  [*Nom du cas d'utilisation* : Refaire.
+\ *Brève description* : L'utilisateur refait une action qui a été annulée précédemment.
+\ *Acteurs* : Utilisateur.
+\ *Contexte* : L'utilisateur souhaite réappliquer une action qu'il a annulée précédemment en utilisant Ctrl-Z.
+\ *Données en entrée et pré-conditions* : Une ou plusieurs actions ont été annulées.
+\ *Scénario principal* : L'utilisateur utilise Ctrl-Y pour restaurer une action annulée par Ctrl-Z, comme une réécriture ou une suppression.
+\ *Variantes, cas d’erreurs* : Si aucune action n'a été annulée, la commande "Refaire" est impossible.],
 
+  [*Nom du cas d'utilisation* : Enregistrer les actions.
+\ *Brève description* : L'utilisateur enregistre une série d'actions effectuées dans l'éditeur de texte pour les rejouer plus tard.
+\ *Acteurs* : Utilisateur.
+\ *Contexte* : L'utilisateur souhaite enregistrer une série d'actions répétitives pour les rejouer plus tard de façon automatique.
+\ *Données en entrée et pré-conditions* : L’éditeur est ouvert.
+\ *Scénario principal* : L'utilisateur active l'enregistrement, effectue plusieurs actions (écriture, copier, coller, etc.), puis arrête l'enregistrement.
+\ *Variantes, cas d’erreurs* : Si aucune action n'a été effectuée, l'enregistrement est vide.],
 
+  [*Nom du cas d'utilisation* : Rejouer les actions.
+\ *Brève description* : L'utilisateur rejoue une série d'actions qui ont été précédemment enregistrées.
+\ *Acteurs* : Utilisateur.
+\ *Contexte* : L'utilisateur souhaite reproduire automatiquement une séquence d'actions enregistrées dans l'éditeur.
+\ *Données en entrée et pré-conditions* : Une série d'actions a déjà été enregistrée.
+\ *Scénario principal* : L'utilisateur sélectionne une séquence enregistrée et la rejoue dans l'éditeur. Les actions se déroulent automatiquement dans l'ordre dans lequel elles ont été effectuées.
+\ *Variantes, cas d’erreurs* : Si aucune action n'a été enregistrée, il n'y a rien à rejouer.],
+))
+
+\
+#h(1cm)Nous modifions ensuite le diagramme de classe grâce aux cas d'utilisations.
+
+\
+
+#h(1cm)Dans cette version on ajoute des nouvelles fonctionnalités par rapport à la v1, la principale amélioration est l'ajout de la classe Historique, qui permet de gérer l'enregistrement des actions effectuées et leur annulation ou réapplication via défaire et refaire. Cela permet de mettre en place les fonctionnalités Ctrl-Z et Ctrl-Y. L'IHM est maintenant liée à l'Historique, ce qui lui permet d'ajouter chaque commande à l'historique après son exécution. Ainsi, le système peut rejouer ou annuler les commandes selon les interactions de l'utilisateur. Ces ajouts permettent une gestion complète des actions de l'utilisateur avec l'éditeur. Nous ajoutons aussi la classe Script, qui nous permet, à l'image de l'historique, d'enregistrer des actions lorsque nous voulons enregistrer un script.
+\
+#h(1cm)Nous avons aussi modifié le fonctionnement d'écriture et du déplacement du curseur. En effet, nous passons maintenant par des commandes afin de pouvoir les stocker dans l'historique et le script.
+#align(image("pictures/Classe2.png", width : 100%), center)
+
+#h(1cm)De nouveau, les getters et les setters ne sont pas représentés par problème de lisibilité.
+
+\
+
+#h(1cm)Nous faisons ensuite les diagrammes de séquences pour chaque cas d'utilisations.
+
+#align(center,table(columns: 2, align: center+horizon,
+  image("pictures/SequenceDefaire.png", width: 150pt),
+  image("pictures/SequenceRefaire.png", width: 150pt),
+  "Défaire",
+  "Refaire",
+  image("pictures/SequenceEnregistrer.png", width: 150pt),
+  image("pictures/SequenceRejouer.png", width: 150pt),
+  "Enregistrer le script",
+  "Rejouer le script"
+))
+
+\
+
+#h(1cm)Nous sommes ensuite passé au développement de la v2. Nous avons tout d'abord dû restreindre les mouvements du curseur aux entrées claviers de l'utilisateur. Nous pouvons donc maintenant bouger le curseur seulement en appuyant sur les touches gauche et droite. Pour sélectionner, il suffit d'appuyer sur shift. De plus, nous pouvons sur la v2 taper n'importe quel caractère. Par contre, si nous appuyons sur une touche qui n'inclus par de caractère imprimable, notre éditeur affiche un caractère vide.
+\ Nous pouvons donc maintenant appuyer sur ctrl et Z ou Y afin de défaire ou refaire une action. Nous pouvons aussi appuyer sur ctrl R afin de lancer l'enregistrement du script. Le curseur s'affiche alors en rouge. Lorsque l'utilisateur veut arrêter d'enregistrer, il appuie de nouveau sur ctrl R, le curseur repasse en noir. Pour rejouer l'enregistrement, l'utilisateur doit presser ctrl et E, ce qui va rejouer l'enregistrement. Si l'enregistrement est vide, ou qu'il n'y a pas eu d'enregistrement, alors rien ne se passera.
+\ Nous avons changé la couleur du background pour que cela soit plus agréable pour nos yeux. Lorsque nous quittons l'éditeur, le programme s'arrête lui aussi.
+\ \
+#h(1cm)Voici un apercu de la deuxième version de notre éditeur de texte.
+#align(image("pictures/ApercuEditeur2.png", width : 80%), center)
 
 
 \ \
 
 == Conclusion
 \
+#h(1cm)Durant ce TP, nous nous sommes rendus compte de l'importance d'utiliser des outils de modélisation. En effet, se poser la question de comment nous pourrions faire un programme que nous pourrons améliorer facilement plus tard a été décisif dans le bon déroulé de notre TP. Nous pouvons prendre comme exemple les quelques modifications que nous avons dû réaliser entre la v1 et la v2 telles que la suppresion de la gestion du curseur par la souris, ou encore l'ajout des commandes addText et RemText afin de faciliter l'implémentation de l'historique et du script. 
+\ #h(1cm)Pour conclure, ce TP nous aura permis de nouveau de nous rendre compte de l'importance des outils de modélisation. En effet, afin de produire un programme complet et surtout, facilement améliorable, il est très important de se poser la question de comment nous pouvons faire en sorte pour rendre facile l'implémentation de nouvelles fonctionnalités plus tard.
